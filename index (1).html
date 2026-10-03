@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dispatch Hisab</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1a1d21;--mu:#6b7280;--bd:#d9dde3;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111418;--card:#1b1f25;--tx:#eceff3;--mu:#98a1ad;--bd:#2d333b}}
+:root[data-theme="dark"]{--bg:#111418;--card:#1b1f25;--tx:#eceff3;--mu:#98a1ad;--bd:#2d333b}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.w{max-width:640px;margin:0 auto;padding:14px}
+h1{font-size:19px;margin:4px 0 12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:12px;color:var(--mu);margin-bottom:3px}
+.g input{width:100%;box-sizing:border-box;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font-size:15px}
+.sc{overflow-x:auto;margin-bottom:12px}
+.sh{border-collapse:collapse;width:100%;min-width:540px;color:#111;background:#dae3f3;table-layout:fixed}
+.sh td{border:1px solid #000;padding:2px 4px;font-size:14px;overflow:hidden;white-space:nowrap}
+.bl{background:#4472c4;color:#fff;font-weight:700;text-align:left}
+.dk{background:#2f5496;color:#fff;font-weight:700}
+.or td{background:#f4b084;height:8px;padding:0}
+.sh td.r{text-align:right;font-weight:700}
+.sh td.n{text-align:right}
+.sh td.c{text-align:center}
+.sh input{width:100%;border:0;background:transparent;font:inherit;padding:5px 2px;box-sizing:border-box;color:inherit}
+.sh input[type=number]{text-align:right}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.bl input{background:#fff;color:#111;width:65%;padding:3px 5px;border-radius:3px}
+.bar{display:flex;gap:10px;flex-wrap:wrap}
+button{border:0;border-radius:8px;padding:11px 14px;font-size:15px;font-weight:600;cursor:pointer;color:#fff;background:#0b5fff;flex:1;min-width:130px}
+button.s{background:var(--bd);color:var(--tx)}
+.s.on{background:#0b5fff;color:#fff}
+button.wa{background:#128c4a}
+#ov{position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.8);display:none;flex-direction:column;z-index:9}
+.tb{display:flex;gap:8px;padding:8px;padding-top:calc(8px + env(safe-area-inset-top,0px));flex-wrap:wrap}
+.tb button,.tb a{flex:1;min-width:100px;text-align:center;text-decoration:none;box-sizing:border-box}
+.tb a{border-radius:8px;padding:11px 14px;font-size:15px;font-weight:600;color:#fff;background:#128c4a}
+#pages{overflow:auto;flex:1;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));text-align:center}
+canvas.pg{width:100%;max-width:700px;background:#fff;margin:0 auto 10px;display:block}
+</style>
+</head>
+<body>
+<div class="w">
+<h1>📦 Dispatch Hisab</h1>
+<div class="card bar"><button class="s on" id="mT">Taxpad rate</button><button class="s" id="mG">+GST rate</button></div>
+<div class="card g">
+ <div><label>Ek box me sq.ft (Basic = Rate × ye)</label><input id="f" type="number" step="0.01" value="15.5"></div>
+ <div><label>Party WhatsApp number</label><input id="ph" type="tel" inputmode="tel" placeholder="98XXXXXXXX"></div>
+</div>
+
+<div class="sc"><table class="sh">
+<colgroup><col style="width:27%"><col style="width:12%"><col style="width:10%"><col style="width:15%"><col style="width:13%"><col style="width:23%"></colgroup>
+<tr><td colspan="6" class="bl">PARTY NAME : <input id="party"></td></tr>
+<tr><td colspan="3" class="bl">ORDER NO : <input id="ord" style="width:45%"></td><td colspan="3" class="bl">DATE : <input id="dt" type="date" style="width:70%"></td></tr>
+<tr class="or"><td colspan="6"></td></tr>
+<tr class="bl" id="hd"></tr>
+<tr id="tp"><td></td><td></td><td class="c">TP</td><td></td><td></td><td></td></tr>
+<tbody id="t1"></tbody>
+<tr id="rT"><td colspan="5" class="r" style="text-align:right">TOTAL</td><td class="r" id="tot"></td></tr>
+<tr id="rBA"><td colspan="5" class="r">BILL AMT :</td><td class="n" id="ba"></td></tr>
+<tr id="rC" class="bl"><td colspan="5" style="text-align:right">CASH AMOUNT</td><td style="text-align:right" id="cash"></td></tr>
+<tr class="bl"><td colspan="5" style="text-align:right" id="dl">OLD DUE</td><td><input id="due" type="number" inputmode="decimal" style="background:#fff;color:#111;text-align:right"></td></tr>
+<tr class="bl"><td colspan="5" style="text-align:right">PAID AMOUNT</td><td><input id="paid" type="number" inputmode="decimal" style="background:#fff;color:#111;text-align:right"></td></tr>
+<tr class="bl"><td colspan="5" style="text-align:right">TOTAL CASH</td><td style="text-align:right" id="tc"></td></tr>
+</table></div>
+
+<div class="bar" style="margin-bottom:12px"><button class="s" id="add">+ Row add karo</button></div>
+
+<div class="sc"><table class="sh">
+<colgroup><col style="width:45%"><col style="width:15%"><col style="width:18%"><col style="width:22%"></colgroup>
+<tr class="or"><td colspan="4"></td></tr>
+<tr><td colspan="4" class="bl" style="text-align:center">BILLING AMOUNT</td></tr>
+<tr style="font-weight:700;text-align:center"><td>Type of Product</td><td>Box</td><td>Rate</td><td>Amount</td></tr>
+<tbody id="t2"></tbody>
+<tr><td></td><td colspan="2" class="r c">TOTAL</td><td class="r" id="bt"></td></tr>
+<tr><td></td><td class="c">INSU</td><td><input id="ins" type="number" step="0.01" value="0.20" style="text-align:center"></td><td class="n" id="ia"></td></tr>
+<tr><td></td><td colspan="2" class="r c">SUB TOTAL</td><td class="n" id="sb"></td></tr>
+<tr><td></td><td class="c">GST %</td><td><input id="gst" type="number" step="0.01" value="18" style="text-align:center"></td><td class="n" id="ga"></td></tr>
+<tr class="dk"><td colspan="3" style="text-align:right">BILLING AMOUNT</td><td style="text-align:right" id="bl"></td></tr>
+</table></div>
+
+<div class="bar">
+ <button id="pdf">👁 PDF dekho</button>
+ <button class="wa" id="wa">WhatsApp par bhejo</button>
+</div>
+<div id="ov"><div class="tb"><button class="s" id="cl">✕ Band</button><button id="sv">⬇ PDF save</button><button class="wa" id="wa2">WhatsApp bhejo</button><a id="wl" target="_blank" rel="noopener" href="#">Chat kholo</a></div><div id="pages"></div></div>
+</div>
+</div>
+<script>
+const $=i=>document.getElementById(i);
+const N=v=>Math.round(v).toLocaleString('en-IN');
+const esc=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const f=()=>+$('f').value||0;
+let mode='G';const G=()=>mode==='G';
+$('dt').valueAsDate=new Date();
+
+function head(){
+ $('hd').innerHTML=(G()?['SERIES','BOX','RATE','BASIC','BILL','AMOUNT']:['SERIES','BOX','RATE','BILL','CASH','AMOUNT']).map(t=>`<td>${t}</td>`).join('');
+ $('tp').style.display=G()?'':'none';
+ $('rBA').style.display=$('rC').style.display=G()?'':'none';
+ $('rT').className=G()?'':'bl';
+ $('dl').textContent=G()?'OLD DUE':'DUE AMOUNT';
+ $('mT').classList.toggle('on',G());$('mG').classList.toggle('on',!G());
+}
+const inp=c=>`<td><input class="${c}" type="number" inputmode="decimal"></td>`;
+function mk(v){
+ const tr=document.createElement('tr');
+ tr.innerHTML='<td><input class="s"></td>'+inp('b')+inp('r')+(G()?'<td class="n bs"></td>'+inp('l'):inp('l')+'<td class="n cs"></td>')+'<td class="n am"></td>';
+ if(v)['s','b','r','l'].forEach(k=>tr.querySelector('.'+k).value=v[k]);
+ return tr;
+}
+function setMode(m){
+ const old=[...$('t1').children].map(tr=>{const g=c=>tr.querySelector(c).value;return{s:g('.s'),b:g('.b'),r:g('.r'),l:g('.l')}});
+ mode=m;head();$('t1').innerHTML='';old.forEach(v=>$('t1').appendChild(mk(v)));calc();
+}
+function model(){
+ const rows=[...$('t1').children].map(tr=>{
+  const g=c=>+tr.querySelector(c).value||0,box=g('.b'),rate=g('.r'),bill=g('.l'),basic=rate*f(),cr=rate?basic-bill:0;
+  return{tr,s:tr.querySelector('.s').value.trim(),box,rate,bill,basic,cr,amt:box*(G()?basic:cr),bamt:box*bill};
+ });
+ const used=rows.filter(r=>r.s||r.box);
+ const sum=k=>used.reduce((a,r)=>a+r[k],0);
+ const total=sum('amt'),bt=sum('bamt'),ins=+$('ins').value||0,gp=+$('gst').value||0;
+ const ia=bt*ins/100,sb=bt+ia,ga=sb*gp/100,billing=sb+ga,cash=G()?total-billing:total;
+ const due=+$('due').value||0,paid=+$('paid').value||0;
+ return{rows,used,total,bt,ins,ia,sb,gp,ga,billing,cash,due,paid,tc:cash+due-paid};
+}
+function calc(){
+ const m=model();
+ m.rows.forEach(r=>{const q=s=>r.tr.querySelector(s);
+  if(G())q('.bs').textContent=r.basic?+r.basic.toFixed(2):'';else q('.cs').textContent=r.cr?+r.cr.toFixed(2):'';
+  q('.am').textContent=r.amt?N(r.amt):'';});
+ $('t2').innerHTML=m.used.map(r=>`<tr><td class="c">${esc(r.s)}</td><td class="n">${r.box}</td><td class="n">${r.bill}</td><td class="n">${N(r.bamt)}</td></tr>`).join('');
+ const S=(i,v)=>$(i).textContent=N(v);
+ S('tot',m.total);S('ba',m.billing);S('cash',m.cash);S('tc',m.tc);
+ S('bt',m.bt);S('ia',m.ia);S('sb',m.sb);S('ga',m.ga);S('bl',m.billing);
+}
+document.addEventListener('input',calc);
+$('add').onclick=()=>{$('t1').appendChild(mk());calc()};
+$('mT').onclick=()=>setMode('G');
+$('mG').onclick=()=>setMode('T');
+head();for(let i=0;i<5;i++)$('t1').appendChild(mk());calc();
+
+function build(){
+ const m=model();
+ if(!m.used.length){alert('Pehle item bharo');return null}
+ const d=new window.jspdf.jsPDF(),X=20,H=6.5;let y=14;
+ const C={b:[68,114,196],l:[218,227,243],o:[244,176,132],k:[47,84,150]};
+ d.setDrawColor(0);d.setLineWidth(.2);
+ const R=(cs,h)=>{let x=X;h=h||H;cs.forEach(([w,t,o])=>{o=o||{};
+  d.setFillColor(...C[o.f||'l']);d.rect(x,y,w,h,'FD');
+  d.setTextColor(o.w?255:0);d.setFont('helvetica',o.n?'normal':'bold');d.setFontSize(9);
+  const ty=y+h/2+1.2,s=String(t);
+  if(o.a==='r')d.text(s,x+w-1.5,ty,{align:'right'});else if(o.a==='c')d.text(s,x+w/2,ty,{align:'center'});else d.text(s,x+1.5,ty);
+  x+=w});y+=h};
+ const B={f:'b',w:1},W=[48,20,18,26,24,34],n2=v=>+v.toFixed(2);
+ const date=$('dt').value.split('-').reverse().join('-');
+ R([[170,'PARTY NAME :   '+$('party').value,B]]);
+ R([[86,'ORDER NO :  '+$('ord').value,B],[84,'DATE :   '+date,B]]);
+ R([[170,'',{f:'o'}]],4);
+ R((G()?['SERIES','BOX','RATE','BASIC','BILL','AMOUNT']:['SERIES','BOX','RATE','BILL','CASH','AMOUNT']).map((t,i)=>[W[i],t,B]));
+ if(G())R([[48,''],[20,''],[18,'TP',{a:'c'}],[26,''],[24,''],[34,'']]);
+ const nr={n:1,a:'r'};
+ m.used.forEach(r=>R([[48,r.s,{n:1}],[20,r.box,nr],[18,r.rate,nr],[26,G()?n2(r.basic):r.bill,nr],[24,G()?r.bill:n2(r.cr),nr],[34,N(r.amt),nr]]));
+ R(W.map(w=>[w,'']));
+ const BR={...B,a:'r'},PL={a:'r'};
+ const L=G()?[['TOTAL',m.total,0],['BILL AMT :',m.billing,0],['CASH AMOUNT',m.cash,1],['OLD DUE',m.due,1],['PAID AMOUNT',m.paid,1],['TOTAL CASH',m.tc,1]]
+  :[['TOTAL',m.total,1],['DUE AMOUNT',m.due,1],['PAID AMOUNT',m.paid,1],['TOTAL CASH',m.tc,1]];
+ L.forEach(([t,v,b])=>{const o=b?BR:PL;R([[136,t,o],[34,N(v),o]])});
+ R([[170,'',{f:'o'}]],4);
+ R([[170,'BILLING AMOUNT',{...B,a:'c'}]]);
+ R([[82,'Type of Product',{a:'c'}],[24,'Box',{a:'c'}],[27,'Rate',{a:'c'}],[37,'Amount',{a:'c'}]]);
+ m.used.forEach(r=>R([[82,r.s,{n:1,a:'c'}],[24,r.box,nr],[27,r.bill,nr],[37,N(r.bamt),nr]]));
+ R([[82,''],[24,''],[27,''],[37,'']]);
+ R([[82,''],[51,'TOTAL',{a:'c'}],[37,N(m.bt),PL]]);
+ R([[82,''],[24,'INSU',{a:'c',n:1}],[27,m.ins.toFixed(2)+'%',{a:'c',n:1}],[37,N(m.ia),nr]]);
+ R([[82,''],[51,'SUB TOTAL',{a:'c'}],[37,N(m.sb),nr]]);
+ R([[82,''],[24,'GST',{a:'c',n:1}],[27,m.gp+'%',{a:'c',n:1}],[37,N(m.ga),nr]]);
+ R([[133,'BILLING AMOUNT',{f:'k',w:1,a:'r'}],[37,N(m.billing),{f:'k',w:1,a:'r'}]]);
+ const name='Hisab-'+(($('party').value||'party').trim().replace(/\s+/g,'_'))+'-'+date+'.pdf';
+ return{d,name,m};
+}
+let cur=null;
+const msg=()=>'Namaste '+$('party').value+',\nAapka dispatch hisab ('+$('dt').value.split('-').reverse().join('-')+') attached hai.\nBilling Amount: Rs. '+N(cur.m.billing)+'\nTotal Cash: Rs. '+N(cur.m.tc);
+const waUrl=()=>{let p=$('ph').value.replace(/\D/g,'');if(p.length===10)p='91'+p;return 'https://wa.me/'+p+'?text='+encodeURIComponent(msg())};
+async function saveFile(){
+ const blob=cur.d.output('blob');
+ try{const c=window.claude&&await window.claude.use('downloads');if(c){await c.save({filename:cur.name,data:blob});return true}}catch(e){if(e&&e.code==='declined')return false}
+ cur.d.save(cur.name);return true;
+}
+async function show(){
+ const b=build();if(!b)return;cur=b;
+ const box=$('pages');box.innerHTML='<p style="color:#fff">Loading...</p>';$('ov').style.display='flex';$('wl').href=waUrl();
+ const buf=b.d.output('arraybuffer');
+ try{
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf.slice(0))}).promise;
+  box.innerHTML='';
+  for(let i=1;i<=pdf.numPages;i++){const pg=await pdf.getPage(i),vp=pg.getViewport({scale:2}),cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;cv.className='pg';box.appendChild(cv);await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise}
+ }catch(e){box.innerHTML='<iframe src="'+URL.createObjectURL(new Blob([buf],{type:'application/pdf'}))+'" style="width:100%;height:80vh;border:0;background:#fff"></iframe>'}
+}
+async function sendWa(){
+ if(!cur){const b=build();if(!b)return;cur=b}
+ const file=new File([cur.d.output('blob')],cur.name,{type:'application/pdf'});
+ try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],text:msg()});return}}catch(e){if(e.name==='AbortError')return}
+ if(await saveFile()){window.open(waUrl(),'_blank');alert('PDF save ho gayi. WhatsApp me us PDF ko attach karke bhej do.')}
+}
+$('pdf').onclick=show;
+$('cl').onclick=()=>{$('ov').style.display='none'};
+$('sv').onclick=saveFile;
+$('wa').onclick=async()=>{const b=build();if(!b)return;cur=b;sendWa()};
+$('wa2').onclick=sendWa;
+</script>
+</body>
+</html>
